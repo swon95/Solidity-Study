@@ -1,5 +1,5 @@
 // 여러 컴포넌트에서 사용할수 있는 유틸리티함수
-import { useWeb3Connect } from "@web3-react/core";
+import { useWeb3React } from "@web3-react/core";
 import { injected } from "./connectors";
 import { useState, useEffect, useCallback } from "react";
 
