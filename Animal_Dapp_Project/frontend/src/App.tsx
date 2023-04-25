@@ -2,6 +2,7 @@ import React, { FC, useEffect, useState } from "react";
 import { Button } from '@chakra-ui/react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Main from './routes/main';
+import { mintAnimalTokenContract } from './contracts';
 
 const App: FC = () => {
 
@@ -24,10 +25,21 @@ const App: FC = () => {
     }
   }
 
+  // const getBalanceOf = async () => {
+  //   const response = await mintAnimalTokenContract.methods
+  //   .balanceOf(account)
+  //   .call()
+
+  //   console.log(response)
+  // }
   // Web3 연결
   useEffect(() => {
     getAccount()
-  }, []);
+
+    // if (account) {
+    //   getBalanceOf()
+    // }
+  }, [account]);
   
   // 연결된 주소 확인
   useEffect(() => {
@@ -37,7 +49,8 @@ const App: FC = () => {
   return(
     <BrowserRouter>
       <Routes>
-        <Route path='/' element={<Main />}/>
+        {/* Main 컴포넌트에 account props, 부모 컴포넌트에서 타입을 지정해줘야됨 */}
+        <Route path='/' element={<Main account={account}/>}/>
       </Routes>
     </BrowserRouter>
   )
