@@ -15,7 +15,14 @@ interface IERC20 {
     // 👉 잔액을 확인하고자 하는 주소(account)
     // 👉 특정 주소의 계정에 남아있는 특정 토큰의 양을 반환
     function balanceOf(address account) external view returns (uint256);
+
+    // 실제 ERC20 에는 transfer 함수가 있으므로 새로운 인터페이스 정의
+    // 👉 토큰이 전송될 때 발생하는 이벤트
+    // 특정 주소(from)에서 다른 주소(to)로 얼마의 토큰이 전송되었는지를 나타내고,
+    // 인덱싱된 매개변수의 값을 통해 Transfer 이벤트를 필터링 함
+    event Transfer(address indexed from, address indexed to, uint256 value);
 }
+
 contract Faucet {
     // 소유자는 자신의 토큰을 인출할 수 있음 
     address payable owner;
@@ -27,11 +34,21 @@ contract Faucet {
     // 사용자가 다시 토큰을 요청할 수 있는 시간 (잠금 기간) 제한 ⏲
     uint256 public lockTime = 1 minutes;
     
+    // 특정 주소(to) 로 금액(amount) 이 인출되었을 때 발생하는 이벤트
+    // indexed 를 통해 특정 주소로 인출된 금액을 효과적으로 검색(필터링)
+    event Withdrawl(address indexed to, uint256 indexed amount);
+
     // 전송할 데이터 생성 👉 주소, 금액
-    event Deposit(address from, uint256 amount); 
+    event Deposit(address indexed from, uint256 indexed amount); 
 
     // 각 사용자의 다음 토큰 요청 가능 시간을 매핑, 주소 == key 
     mapping(address => uint256) nextAccessTime;
+
+    // 계약 소유자만이 이 함수를 호출할 수 있음
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only contract owner can call this function");
+        _; // 함수의 본문을 의미하는 _; 👉 Replace, 함수의 일부분을 modifier 가 대체(_)
+    }
 
     // constructor 함수는 Faucet 컨트랙트가 생성될 때 호출
     // ERC-20 토큰의 주소를 받아 token 변수에 할당
@@ -62,5 +79,31 @@ contract Faucet {
     // 👉 외부에서도 해당 이벤트를 감지하고 추적할 수 있도록 external 사용
     receive() external payable {
         emit Deposit(msg.sender, msg.value);
+    }
+
+    // Faucet 컨트랙트의 현재 잔액을 반환하는 함수 👉 외부에서 Faucet 컨트랙트 잔액을 확인하고 싶을 때 사용
+    function getBalance() external view returns (uint256) {
+        // IERC20 인스턴스를 통해 특정 주소에 잔액을 반환
+        return token.balanceOf(address(this));
+    }
+
+    // 인출 금액 설정
+    function setWithdrawlAmount(uint256 amount) public onlyOwner {
+        withdrawlAmount = amount * (10**18);
+    }
+
+    // lockTime 변수의 값을 할당하는 함수
+    // lockTime(변수) + amount(매개변수) * 1 minutes 👉 사용자가 토큰을 요청한 후에 다시 토큰을 요청할 수 있는데 걸리는 시간
+    // ex) setLockTime(5) == lockTime 은 5분으로 설정되며,
+    // 사용자는 5분동안 토큰을 다시 요청할 수 없음
+    function setLockTime(uint256 amount) public onlyOwner {
+        lockTime = amount * 1 minutes;
+    }
+
+    // trancfer 함수를 사용하여 컨트랙트에 보유한 모든 토큰을 인출
+    function withdrawl() external onlyOwner {
+        // msg.sender 👉 함수를 호출한 주소
+        // token.balanceOf(address(this)) 👉 현재 계약의 잔고
+        token.transfer(msg.sender, token.balanceOf(address(this)));
     }
 }
