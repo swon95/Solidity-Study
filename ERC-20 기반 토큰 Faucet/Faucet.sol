@@ -9,7 +9,7 @@ interface IERC20 {
     
     // 외부에서 transfer 함수를 읽기 전용으로 호출하기 위해 external view 사용
     // 👉 해당 함수가 성공하면 true or 실패 시 false
-    function transfer(address to, uint256 amount) external view returns (bool);
+    function transfer(address to, uint256 amount) external returns (bool);
 
     // erc20 토큰의 잔액을 확인하는 함수
     // 👉 잔액을 확인하고자 하는 주소(account)
@@ -101,7 +101,9 @@ contract Faucet {
     }
 
     // trancfer 함수를 사용하여 컨트랙트에 보유한 모든 토큰을 인출
-    function withdrawl() external onlyOwner {
+    function withdraw() external onlyOwner {
+        // Withdrawl event 불러오기 👉 적용
+        emit Withdrawl(msg.sender, token.balanceOf(address(this)));
         // msg.sender 👉 함수를 호출한 주소
         // token.balanceOf(address(this)) 👉 현재 계약의 잔고
         token.transfer(msg.sender, token.balanceOf(address(this)));
